@@ -8,13 +8,6 @@ pipeline {
         maven 'Maven'
     }
     stages {
-        /*stage("init") {
-            steps {
-                script {
-                    gv = load "script.groovy"
-                }
-            }
-        }*/
         stage("build jar") {
             steps {
                 script {
@@ -25,8 +18,7 @@ pipeline {
         stage("deploy") {
             steps {
                 script {
-                    echo "Deploying the application..."
-                    //gv.deployApp()
+                    echo "Deploying the application..."                   
                 }
             }
         }
