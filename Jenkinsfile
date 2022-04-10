@@ -25,7 +25,10 @@ pipeline {
         stage("deploy") {
             steps {
                 script {
-                    gv.deployApp()                 
+                    gv.deployApp()
+                    sshagent(['3.109.47.42']) {
+                        sh 'ssh -o StrictHostKeyChecking=0 ec2-user@3.109.47.42'
+                    }
                 }
             }
         }
