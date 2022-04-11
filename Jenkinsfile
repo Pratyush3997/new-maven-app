@@ -27,7 +27,7 @@ pipeline {
                 script {
                     gv.deployApp()
                     sshagent(['ec2-server-key']) {
-                        sh 'ssh -o StrictHostKeyChecking=no ec2-user@65.0.102.246:80'
+                        sh 'ssh -o StrictHostKeyChecking=no ec2-65-0-102-246.ap-south-1.compute.amazonaws.com'
                     }
                 }
             }
