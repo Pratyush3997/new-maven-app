@@ -1,8 +1,10 @@
 FROM openjdk:11
+COPY . /usr/src/myapp
+WORKDIR /usr/src/myapp
+RUN javac Main.java
+CMD ["java", "Main"]
 
-EXPOSE 8081
+#You can then run and build the Docker image:
 
-COPY ./target/java-maven-app-*.jar /usr/app/
-WORKDIR /usr/app
-
-CMD java -jar java-maven-app-*.jar
+$ docker build -t my-java-app .
+$ docker run -it --rm --name my-running-app my-java-app
