@@ -1,41 +1,66 @@
 #!/usr/bin/env groovy
 
-def gv
-
 pipeline {
     agent any
     tools {
-        maven 'Maven-3.8.5'
+        maven 'Maven'
     }
     stages {
-        stage("init") {
+        stage('increment version') {
             steps {
                 script {
-                    gv = load "script.groovy"
+                    echo 'incrementing app version...'
+                    sh 'mvn build-helper:parse-version versions:set \
+                        -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
+                        versions:commit'
+                    def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
+                    def version = matcher[0][1]
+                    env.IMAGE_NAME = "$version-$BUILD_NUMBER"
                 }
             }
         }
-        stage("build jar") {
+        stage('build app') {
             steps {
                 script {
-                    gv.buildJar()
+                    echo "building the application..."
+                    sh 'mvn clean package'
                 }
             }
         }
-        stage("build image") {
+        stage('build image') {
             steps {
                 script {
-                    gv.buildImage()
+                    echo "building the docker image..."
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh "docker build -t testp123/demo-repo-1:${IMAGE_NAME} ."
+                        sh "echo $PASS | docker login -u $USER --password-stdin"
+                        sh "docker push testp123/demo-repo-1:${IMAGE_NAME}"
+                    }
                 }
             }
         }
-        stage("deploy") {
+        stage('deploy') {
             steps {
                 script {
-                    gv.deployApp()
+                    echo 'deploying docker image to EC2...'
+                }
+            }
+        }
+        stage('commit version update') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'github-credentials', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        // git config here for the first time run
+                        sh 'git config --global user.email "pratyush.thorat99@gmail.com"'
+                        sh 'git config --global user.name "Pratyush3997"'
+
+                        sh "git remote set-url origin https://${USER}:${PASS}@https://github.com/Pratyush3997/new-maven-app.git"
+                        sh 'git add .'
+                        sh 'git commit -m "ci: version bump"'
+                        sh 'git push origin HEAD:jenkins-jobs'
+                    }
                 }
             }
         }
     }
 }
-
